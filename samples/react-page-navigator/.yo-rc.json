@@ -1,0 +1,33 @@
+{
+  "@pnp/generator-spfx": {
+    "framework": "react",
+    "pnpFramework": "reactjs.plus",
+    "pnp-libraries": [
+      "@pnp/pnpjs",
+      "@pnp/spfx-property-controls",
+      "@pnp/spfx-controls-react",
+      "ouifr@6",
+      "rush@2.9"
+    ],
+    "pnp-ci": [],
+    "pnp-vetting": [],
+    "spfxenv": "spo",
+    "pnp-testing": []
+  },
+  "@microsoft/generator-sharepoint": {
+    "environment": "spo",
+    "framework": "react",
+    "sdkVersions": {
+      "@microsoft/teams-js": "2.24.0",
+      "@microsoft/microsoft-graph-client": "3.0.2"
+    },
+    "isCreatingSolution": true,
+    "nodeVersion": "18.19.1",
+    "version": "1.20.0",
+    "libraryName": "navigator",
+    "libraryId": "065ee566-e00d-4058-bbfd-356c8d9a8005",
+    "packageManager": "npm",
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}

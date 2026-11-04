@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "developer": {
+      "name": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "websiteUrl": "",
+      "mpnId": ""
+    },
+    "name": "react-page-navigator",
+    "id": "065ee566-e00d-4058-bbfd-356c8d9a8005",
+    "version": "1.13.0.0",
+    "includeClientSideAssets": true,
+    "isDomainIsolated": false,
+    "metadata": {
+      "shortDescription": {
+        "default": "This web part fetches all the automatically added header anchor tags in a SharePoint page and displays them in a navigation component."
+      },
+      "longDescription": {
+        "default": "This web part fetches all the automatically added header anchor tags in a SharePoint page and displays them in a navigation component. When added to a vertical section it can be used as a contents table for the page."
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "Page navigator",
+        "description": "The feature that activates elements of the navigator solution.",
+        "id": "021884c2-d7b3-4937-9d58-5ae47e1adfb7",
+        "version": "1.9.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/react-page-navigator.sppkg"
+  }
+}
