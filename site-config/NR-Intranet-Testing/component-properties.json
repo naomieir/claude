@@ -1,0 +1,9 @@
+{
+  "homeUrl": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing",
+  "logoUrl": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SiteAssets/logo.png",
+  "logoAltText": "NR Intranet",
+  "navigationSource": "jsonFile",
+  "navigationFileName": "navigation.json",
+  "navigationFileFolder": "SiteAssets",
+  "features": { "adminSettingsEnabled": true }
+}

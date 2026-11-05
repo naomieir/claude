@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "general": {
+    "homeUrl": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing",
+    "logoUrl": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SiteAssets/logo.png",
+    "logoAltText": "NR Intranet",
+    "navigationSource": "jsonFile",
+    "navigationFileName": "navigation.json",
+    "navigationFileFolder": "SiteAssets",
+    "footerHtml": "<footer style='text-align:center;padding:8px 16px;font-size:12px'>NR Intranet (testing) · <a href='https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SitePages/Contact.aspx' style='color:inherit;text-decoration:underline'>Contact</a></footer>",
+    "footerHeight": 40
+  },
+  "features": {
+    "adminSettingsEnabled": true,
+    "searchEnabled": true,
+    "userProfileEnabled": true,
+    "appLauncherEnabled": true,
+    "quickActionsEnabled": false,
+    "languageSwitcherEnabled": false,
+    "helpEnabled": false,
+    "breadcrumbsEnabled": true,
+    "accessibilityToolsEnabled": true,
+    "backToTopEnabled": true,
+    "footerEnabled": true,
+    "analyticsEnabled": false
+  },
+  "colors": {},
+  "fontSizes": {}
+}

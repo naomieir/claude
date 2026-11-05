@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "items": [
+    { "id": "home", "label": "Home", "url": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SitePages/Home.aspx", "iconName": "Home", "order": 10, "children": [] },
+    { "id": "news", "label": "News", "url": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SitePages/News.aspx", "order": 20, "children": [] },
+    {
+      "id": "about", "label": "About us", "url": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SitePages/About.aspx", "order": 30,
+      "children": [
+        { "id": "about-who", "label": "Who we are", "url": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SitePages/About.aspx", "group": "Organisation", "order": 10, "children": [] },
+        { "id": "about-teams", "label": "Teams", "url": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SitePages/Teams.aspx", "group": "Organisation", "order": 20, "children": [] },
+        { "id": "about-policies", "label": "Policies", "url": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SitePages/Policies.aspx", "group": "Governance", "order": 30, "children": [] }
+      ]
+    },
+    {
+      "id": "resources", "label": "Resources", "order": 40,
+      "children": [
+        { "id": "res-docs", "label": "Documents", "url": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/Shared%20Documents/Forms/AllItems.aspx", "group": "Libraries", "order": 10, "children": [] },
+        { "id": "res-contents", "label": "Site contents", "url": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/_layouts/15/viewlsts.aspx", "group": "Libraries", "order": 20, "children": [] },
+        { "id": "res-forms", "label": "Forms and templates", "url": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SitePages/Forms.aspx", "group": "Guidance", "order": 30, "children": [] }
+      ]
+    },
+    { "id": "contact", "label": "Contact", "url": "https://grescomau.sharepoint.com/sites/NR-Intranet-Testing/SitePages/Contact.aspx", "order": 50, "children": [] }
+  ]
+}
