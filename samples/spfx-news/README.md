@@ -24,13 +24,17 @@ A SharePoint Framework (SPFx) web part that displays SharePoint news in **6 conf
 - **Theme-aware** — Adapts to SharePoint themes and Teams light/dark/high-contrast themes automatically
 - **Localized UI** — Ships with 48 language translations
 
-## Additions in versions 1.1 to 1.3
+## Additions in versions 1.1 to 1.4
 
 These versions add two display switches, a choice of which news to show, and automatic scrolling for the Carousel layout. Existing web parts keep their current content after upgrading: the switches default to on, and the content defaults to the newest news with no filter. Carousels start scrolling automatically, which can be turned off.
 
 ### Show site name, show description
 
 The **Display** group has two new switches. **Show site name** controls the label above each headline naming the site the news post came from. **Show description** controls the page description under the headline. Turning a switch off removes the element from every layout. Neither switch causes the news to be fetched again.
+
+### Grid: image and title only
+
+The **Grid** layout shows each news post's image and title only, with the title over the image on every fourth card, as in the original grid. Site name, description, author, date, views, likes, comments and the share button are not shown, so their switches are hidden in the **Display** group while Grid is selected; they still apply to the other layouts. The card library sizes grid rows for full cards (at least 400 px), which would leave a blank area under each title, so the web part lowers the minimum row height to 260 px. That override targets the row style of `@spteck/react-controls-v2` 2.7.7, which the lockfile pins; if a later version changes it, cards keep their content but return to the taller rows.
 
 ### Carousel: automatic scrolling
 
@@ -83,6 +87,7 @@ This sample is optimally compatible with the following environment configuration
 | 1.1.0 | November 5, 2026 | Show site name and Show description switches; enterprise keyword and page-property filter; Lithuanian locale fix |
 | 1.2.0 | November 5, 2026 | Page-property filter removed; Selected news posts mode added, with ordering |
 | 1.3.0 | November 5, 2026 | Automatic scrolling for the Carousel layout, with adjustable speed and pause control |
+| 1.4.0 | November 5, 2026 | Grid layout shows image and title only |
 
 ## Contributors
 

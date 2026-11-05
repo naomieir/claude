@@ -20,6 +20,20 @@ import { ShareDialog } from "./ShareDialog";
 import { Button, tokens } from "@fluentui/react-components";
 import { Icon } from "@iconify/react";
 import { useCarouselAutoplay } from "../hooks/useCarouselAutoplay";
+import { css } from "@emotion/css";
+
+/*
+ * The grid layout of @spteck/react-controls-v2 2.7.7 sets an inline
+ * `grid-auto-rows: minmax(400px, auto)`, sized for cards with text and stats.
+ * With image and title only, that leaves a blank area under each title, so
+ * rows are lowered to fit an image plus a two-line title. 260px also keeps the
+ * grid's overlay cards (title over image) from collapsing.
+ */
+const compactGridClass = css({
+  '& div[style*="grid-auto-rows"]': {
+    gridAutoRows: "minmax(260px, auto) !important",
+  },
+});
 
 import { INewsFeedWebPartRootProps } from "../models/INewsFeedWebPartRootProps";
 import PlaceHolder from "./PlaceHolder/PlaceHolder";
@@ -248,6 +262,9 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
     };
   }, [isLoading, newsPosts]);
 
+  // The grid layout shows each post's image and title only.
+  const isGrid = layout === "grid";
+
   // Display toggles only re-map existing data; they never trigger a fetch.
   const items: INewsFeedItem[] = useMemo(
     () =>
@@ -255,9 +272,10 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
         mapNewsPostToFeedItem(post, counts.likes[i], counts.comments[i], {
           showSiteName,
           showDescription,
+          imageAndTitleOnly: isGrid,
         }),
       ),
-    [counts, showSiteName, showDescription],
+    [counts, showSiteName, showDescription, isGrid],
   );
 
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -333,11 +351,11 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
         headlineLines={headlineLines}
         bodyLines={bodyLines}
         draggable={allowDrag}
-        showAuthorDate={showAuthorDate}
-        showStats={showViewsLikes}
-        showComments={showComments}
-        showShare={showShare}
-        showBodyText={showDescription}
+        showAuthorDate={!isGrid && showAuthorDate}
+        showStats={!isGrid && showViewsLikes}
+        showComments={!isGrid && showComments}
+        showShare={!isGrid && showShare}
+        showBodyText={!isGrid && showDescription}
         onShare={handleShare}
       />
   );
@@ -380,6 +398,8 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
             }}
           />
         </div>
+      ) : isGrid ? (
+        <div className={compactGridClass}>{feed}</div>
       ) : (
         feed
       )}

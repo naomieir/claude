@@ -6,6 +6,8 @@ export interface IMapNewsOptions {
   showSiteName: boolean;
   /** Include the page description (rendered as the card's body text) */
   showDescription: boolean;
+  /** Keep only the image and title (and the link); used by the grid layout */
+  imageAndTitleOnly?: boolean;
 }
 
 const DEFAULT_MAP_OPTIONS: IMapNewsOptions = { showSiteName: true, showDescription: true };
@@ -21,6 +23,14 @@ export function mapNewsPostToFeedItem(
   comments?: number,
   options: IMapNewsOptions = DEFAULT_MAP_OPTIONS
 ): INewsFeedItem {
+  if (options.imageAndTitleOnly) {
+    return {
+      id: post.id,
+      headline: post.title,
+      imageUrl: post.bannerImageUrlOWSURLH,
+      linkUrl: post.path,
+    };
+  }
   return {
     id: post.id,
     headline: post.title,

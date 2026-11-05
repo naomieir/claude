@@ -170,6 +170,7 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     const isMarquee = this.properties.layout === 'marquee';
+    const isGrid = this.properties.layout === 'grid';
     const isDraggableLayout = (['grid', 'list', 'masonry', 'feature', 'mosaic'] as string[]).indexOf(this.properties.layout) !== -1;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -294,6 +295,8 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
                     this.render();
                   },
                 }),
+                // The grid layout shows image and title only, so these do not apply to it.
+                ...(isGrid ? [] : [
                 PropertyPaneToggleSwitch('showSiteName', {
                   label: strings.ShowSiteNameLabel,
                   value: this.properties.showSiteName,
@@ -354,6 +357,7 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
                     this.render();
                   },
                 }),
+                ]),
               ],
             },
             {
