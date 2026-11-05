@@ -47,3 +47,51 @@ The output appears at `react-custom-links/sharepoint/solution/custom-links.sppkg
 ## Caveats
 
 The sample targets SPFx 1.11 runtime libraries (October 2020) and is a community sample, not a Microsoft-supported product. It works on SharePoint Online but not on SharePoint Server 2016 or 2019. Before using it in production, consider testing it on a non-critical site first.
+
+---
+
+# Global Navigation Header extension for SharePoint Online
+
+This repository also holds a ready-to-deploy package built from the PnP community sample [`react-application-navigation-header`](https://github.com/pnp/sp-dev-fx-extensions/tree/main/samples/react-application-navigation-header) by Nicolas Kheirallah. It is an SPFx Application Customizer that renders a responsive global header (mega-menu, mobile drawer, search, bookmarks, accessibility tools) in the `Top` placeholder of every modern page, and an optional HTML footer in the `Bottom` placeholder. Navigation is read from the SharePoint Term Store or from a `navigation.json` file in Site Assets.
+
+## Contents
+
+| Path | Purpose |
+|------|---------|
+| `package/navigation-header.sppkg` | Production package, ready to upload to the App Catalog |
+| `react-application-navigation-header/` | Sample source with one dependency patch (see below) |
+
+## Change from upstream
+
+The upstream lockfile pinned `dompurify` 3.4.13, which is affected by critical cross-site scripting advisories ([GHSA-p98j-92pf-mc4p](https://github.com/advisories/GHSA-p98j-92pf-mc4p), [GHSA-mrv2-3pqr-j5jr](https://github.com/advisories/GHSA-mrv2-3pqr-j5jr) and related). DOMPurify is the library that sanitises the admin-authored footer HTML, so it was raised to `^3.4.17`; `npm audit fix` also moved the transitive build-time dependency `fast-uri` to 3.1.9. `npm audit --omit=dev` now reports no vulnerabilities. The remaining audit findings sit in the SPFx build toolchain, and resolving them would require `--force` upgrades that break the pinned SPFx 1.23.2 versions; they do not reach the shipped bundle. No source code was changed.
+
+## Deploying the package
+
+The solution sets `includeClientSideAssets: true` and `skipFeatureDeployment: true`, and requests no Microsoft Graph or other API permissions. Upload `package/navigation-header.sppkg` to the App Catalog as described above. The package includes `ClientSideInstance.xml`, so ticking **Make this solution available to all sites** registers the header in the App Catalog's **Tenant Wide Extensions** list and activates it on every modern site at once. To limit its reach, leave that box unticked and add the app to individual sites instead, or edit the list entry afterwards to target specific site templates or disable it.
+
+The default component properties in `ClientSideInstance.xml` contain literal placeholders (`{homeUrl}`, `{logoUrl}`, `{logoAltText}`) and set `navigationSource` to `jsonFile`. Replace these, either in the Tenant Wide Extensions list entry or in a `settings.json` file, before relying on the header in production; otherwise the logo link will point to the placeholder text. Configuration options (`navigationSource`, `termSetId`, colours, feature flags) are documented in `react-application-navigation-header/README.md`.
+
+## Build provenance
+
+| Item | Value |
+|------|-------|
+| Upstream commit | `pnp/sp-dev-fx-extensions@9e9ce76eebc90b3c998af4a6e933720bfc068190` |
+| Solution ID | `f22b86bd-bfd8-4fa3-9c74-d15efc925bc6` |
+| Version | `1.0.0.0` |
+| SHA-256 | `eb0aa7717d4c146e3b41783198961c34bb22467df88bbb6b75c64181f2b0f5b2` |
+
+Built with `npm ci` and `npm run build` (Heft, `--production`) on Node.js 22.23.4. ESLint passed with `--max-warnings 0` and all 45 Jest tests passed.
+
+## Rebuilding
+
+```bash
+cd react-application-navigation-header
+npm ci
+npm run build
+```
+
+The output appears at `react-application-navigation-header/sharepoint/solution/header.sppkg`.
+
+## Caveats
+
+This is a community sample, not a Microsoft-supported product, and it runs on SharePoint Online only. Because it injects into every page, test it on a non-critical site before tenant-wide activation.
