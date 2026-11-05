@@ -32,9 +32,11 @@ These versions add two display switches, a choice of which news to show, and aut
 
 The **Display** group has two new switches. **Show site name** controls the label above each headline naming the site the news post came from. **Show description** controls the page description under the headline. Turning a switch off removes the element from every layout. Neither switch causes the news to be fetched again.
 
-### Grid: image and title only
+### Grid and Filmstrip: uniform cards
 
-The **Grid** layout shows each news post's image and title only, with the title over the image on every fourth card, as in the original grid. Site name, description, author, date, views, likes, comments and the share button are not shown, so their switches are hidden in the **Display** group while Grid is selected; they still apply to the other layouts. The card library sizes grid rows for full cards (at least 400 px), which would leave a blank area under each title, so the web part lowers the minimum row height to 260 px. That override targets the row style of `@spteck/react-controls-v2` 2.7.7, which the lockfile pins; if a later version changes it, cards keep their content but return to the taller rows.
+In the **Grid** and **Filmstrip** layouts every post uses the same card. The card library makes every fourth post a featured card, with its title over the image, and offers no option to turn this off. Because that changes the card's structure, the web part lays out these two layouts itself, using the library's own `NewsCard` with the standard variant for every post, and the library's spacing, column widths and scroll snapping. In the grid, every row takes the height of the tallest, so all cards are the same size even when one title wraps onto a second line.
+
+**Grid** cards show each post's image and title only. Site name, description, author, date, views, likes, comments and the share button are not shown, so their switches are hidden in the **Display** group while Grid is selected; they still apply to the other layouts, including Filmstrip. Drag-to-reorder is not available in these two layouts, so **Allow drag** is no longer offered for Grid.
 
 ### Carousel: automatic scrolling
 
@@ -88,6 +90,7 @@ This sample is optimally compatible with the following environment configuration
 | 1.2.0 | November 5, 2026 | Page-property filter removed; Selected news posts mode added, with ordering |
 | 1.3.0 | November 5, 2026 | Automatic scrolling for the Carousel layout, with adjustable speed and pause control |
 | 1.4.0 | November 5, 2026 | Grid layout shows image and title only |
+| 1.5.0 | November 5, 2026 | Grid and Filmstrip use one card style for every post, with no featured cards; grid cards share one height |
 
 ## Contributors
 

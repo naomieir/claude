@@ -40,6 +40,7 @@ define([], function() {
     "ShowViewsLikesLabel": "Show views and likes",
     "ShowCommentsLabel": "Show comments",
     "ShowShareLabel": "Show share button",
+    "NewsRegionLabel": "News",
     "CarouselAutoplayLabel": "Scroll automatically",
     "CarouselIntervalLabel": "Seconds per slide",
     "CarouselPauseLabel": "Pause automatic scrolling",

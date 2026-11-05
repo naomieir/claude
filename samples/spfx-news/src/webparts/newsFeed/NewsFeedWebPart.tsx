@@ -171,7 +171,7 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     const isMarquee = this.properties.layout === 'marquee';
     const isGrid = this.properties.layout === 'grid';
-    const isDraggableLayout = (['grid', 'list', 'masonry', 'feature', 'mosaic'] as string[]).indexOf(this.properties.layout) !== -1;
+    const isDraggableLayout = (['list', 'masonry', 'feature', 'mosaic'] as string[]).indexOf(this.properties.layout) !== -1;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const layoutFields: IPropertyPaneField<any>[] = [

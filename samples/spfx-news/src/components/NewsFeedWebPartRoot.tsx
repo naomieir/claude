@@ -20,20 +20,7 @@ import { ShareDialog } from "./ShareDialog";
 import { Button, tokens } from "@fluentui/react-components";
 import { Icon } from "@iconify/react";
 import { useCarouselAutoplay } from "../hooks/useCarouselAutoplay";
-import { css } from "@emotion/css";
-
-/*
- * The grid layout of @spteck/react-controls-v2 2.7.7 sets an inline
- * `grid-auto-rows: minmax(400px, auto)`, sized for cards with text and stats.
- * With image and title only, that leaves a blank area under each title, so
- * rows are lowered to fit an image plus a two-line title. 260px also keeps the
- * grid's overlay cards (title over image) from collapsing.
- */
-const compactGridClass = css({
-  '& div[style*="grid-auto-rows"]': {
-    gridAutoRows: "minmax(260px, auto) !important",
-  },
-});
+import { UniformNewsLayout } from "./UniformNewsLayouts/UniformNewsLayouts";
 
 import { INewsFeedWebPartRootProps } from "../models/INewsFeedWebPartRootProps";
 import PlaceHolder from "./PlaceHolder/PlaceHolder";
@@ -342,7 +329,24 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
   const showAutoplayControl =
     layout === "carousel" && carouselAutoplay && items.length > 1;
 
-  const feed = (
+  // Grid and filmstrip use one card style for every post (no featured cards).
+  const isUniformLayout = layout === "grid" || layout === "filmstrip";
+
+  const feed = isUniformLayout ? (
+    <UniformNewsLayout
+      layout={layout as "grid" | "filmstrip"}
+      items={items}
+      height={height}
+      headlineLines={headlineLines}
+      bodyLines={bodyLines}
+      showBodyText={!isGrid && showDescription}
+      showAuthorDate={!isGrid && showAuthorDate}
+      showStats={!isGrid && showViewsLikes}
+      showComments={!isGrid && showComments}
+      showShare={!isGrid && showShare}
+      onShare={handleShare}
+    />
+  ) : (
       <NewsFeed
         layout={layout}
         items={items}
@@ -398,8 +402,6 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
             }}
           />
         </div>
-      ) : isGrid ? (
-        <div className={compactGridClass}>{feed}</div>
       ) : (
         feed
       )}
