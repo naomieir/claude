@@ -17,6 +17,9 @@ import {
   INewsPost,
 } from "@spteck/m365-hooks";
 import { ShareDialog } from "./ShareDialog";
+import { Button, tokens } from "@fluentui/react-components";
+import { Icon } from "@iconify/react";
+import { useCarouselAutoplay } from "../hooks/useCarouselAutoplay";
 
 import { INewsFeedWebPartRootProps } from "../models/INewsFeedWebPartRootProps";
 import PlaceHolder from "./PlaceHolder/PlaceHolder";
@@ -50,6 +53,8 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
   showSiteName,
   showDescription,
   newsFilter,
+  carouselAutoplay,
+  carouselIntervalSeconds,
   dataSourceMode,
   selectedSites,
   maxNews,
@@ -255,6 +260,18 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
     [counts, showSiteName, showDescription],
   );
 
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const autoplay = useCarouselAutoplay(
+    carouselRef,
+    layout === "carousel" &&
+      carouselAutoplay &&
+      !isLoading &&
+      !isLoadingLikes &&
+      items.length > 1,
+    carouselIntervalSeconds ?? 5,
+    items.length,
+  );
+
   if (isSelectedPostsMode && newsFilter.selectedPosts.length === 0) {
     return (
       <PlaceHolder
@@ -304,8 +321,10 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
     }
   }
 
-  return (
-    <>
+  const showAutoplayControl =
+    layout === "carousel" && carouselAutoplay && items.length > 1;
+
+  const feed = (
       <NewsFeed
         layout={layout}
         items={items}
@@ -321,6 +340,49 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
         showBodyText={showDescription}
         onShare={handleShare}
       />
+  );
+
+  return (
+    <>
+      {showAutoplayControl ? (
+        <div style={{ position: "relative" }}>
+          {/* Hover and focus inside this element pause autoplay. */}
+          <div ref={carouselRef}>{feed}</div>
+          {/* Outside the tracked element, so pressing it does not itself pause. */}
+          <Button
+            size="small"
+            appearance="subtle"
+            aria-label={
+              autoplay.isUserPaused
+                ? strings.CarouselPlayLabel
+                : strings.CarouselPauseLabel
+            }
+            title={
+              autoplay.isUserPaused
+                ? strings.CarouselPlayLabel
+                : strings.CarouselPauseLabel
+            }
+            icon={
+              <Icon
+                icon={
+                  autoplay.isUserPaused
+                    ? "fluent:play-20-regular"
+                    : "fluent:pause-20-regular"
+                }
+              />
+            }
+            onClick={autoplay.toggleUserPaused}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              backgroundColor: tokens.colorNeutralBackground1,
+            }}
+          />
+        </div>
+      ) : (
+        feed
+      )}
       {shareTarget && (
         <ShareDialog
           isOpen

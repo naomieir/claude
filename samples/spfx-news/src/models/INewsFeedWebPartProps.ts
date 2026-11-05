@@ -25,4 +25,8 @@ export interface INewsFeedWebPartProps {
   showDescription: boolean;
   /** Enterprise keyword and page property filter */
   newsFilter: INewsFilter;
+  /** Carousel layout: advance slides automatically */
+  carouselAutoplay: boolean;
+  /** Carousel layout: seconds each slide stays before advancing */
+  carouselIntervalSeconds: number;
 }

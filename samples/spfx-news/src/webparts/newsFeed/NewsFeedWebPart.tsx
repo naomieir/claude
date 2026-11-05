@@ -93,6 +93,12 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
     if (this.properties.showDescription === undefined) {
       this.properties.showDescription = true;
     }
+    if (this.properties.carouselAutoplay === undefined) {
+      this.properties.carouselAutoplay = true;
+    }
+    if (!this.properties.carouselIntervalSeconds) {
+      this.properties.carouselIntervalSeconds = 5;
+    }
     // Also drops the page-property fields saved by version 1.1.
     this.properties.newsFilter = normaliseNewsFilter(this.properties.newsFilter);
 
@@ -145,6 +151,8 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
       showSiteName: this.properties.showSiteName,
       showDescription: this.properties.showDescription,
       newsFilter: this.properties.newsFilter,
+      carouselAutoplay: this.properties.carouselAutoplay,
+      carouselIntervalSeconds: this.properties.carouselIntervalSeconds,
       displayMode: this.displayMode,
       onConfigure: () => this.context.propertyPane.open(),
     });
@@ -185,6 +193,39 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
           },
         })
       );
+    }
+
+    if (this.properties.layout === 'carousel') {
+      layoutFields.push(
+        PropertyPaneToggleSwitch('carouselAutoplay', {
+          label: strings.CarouselAutoplayLabel,
+          value: this.properties.carouselAutoplay,
+          theme: this._theme!,
+          hostType: this._hostType,
+          onChange: (value) => {
+            this.properties.carouselAutoplay = value;
+            this.context.propertyPane.refresh();
+            this.render();
+          },
+        })
+      );
+      if (this.properties.carouselAutoplay) {
+        layoutFields.push(
+          PropertyPaneMaxNews('carouselIntervalSeconds', {
+            label: strings.CarouselIntervalLabel,
+            value: this.properties.carouselIntervalSeconds,
+            min: 2,
+            max: 20,
+            step: 1,
+            theme: this._theme!,
+            hostType: this._hostType,
+            onChange: (value) => {
+              this.properties.carouselIntervalSeconds = value;
+              this.render();
+            },
+          })
+        );
+      }
     }
 
     if (isDraggableLayout) {

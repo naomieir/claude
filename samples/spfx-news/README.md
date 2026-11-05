@@ -24,13 +24,21 @@ A SharePoint Framework (SPFx) web part that displays SharePoint news in **6 conf
 - **Theme-aware** — Adapts to SharePoint themes and Teams light/dark/high-contrast themes automatically
 - **Localized UI** — Ships with 48 language translations
 
-## Additions in versions 1.1 and 1.2
+## Additions in versions 1.1 to 1.3
 
-These versions add two display switches and a choice of which news to show. Existing web parts keep their current appearance and content after upgrading: the switches default to on, and the content defaults to the newest news with no filter.
+These versions add two display switches, a choice of which news to show, and automatic scrolling for the Carousel layout. Existing web parts keep their current content after upgrading: the switches default to on, and the content defaults to the newest news with no filter. Carousels start scrolling automatically, which can be turned off.
 
 ### Show site name, show description
 
 The **Display** group has two new switches. **Show site name** controls the label above each headline naming the site the news post came from. **Show description** controls the page description under the headline. Turning a switch off removes the element from every layout. Neither switch causes the news to be fetched again.
+
+### Carousel: automatic scrolling
+
+With the **Carousel** layout selected, the **Layout** group shows **Scroll automatically** (on by default) and, while it is on, **Seconds per slide** (2 to 20, default 5). The carousel advances one step at that interval and, after the last slide, scrolls back to the first.
+
+So that moving content stays under the reader's control, in line with WCAG 2.2 success criterion 2.2.2 (*Pause, Stop, Hide*), scrolling pauses while the pointer is over the carousel or keyboard focus is inside it, and while the browser tab is hidden. A pause/play button in the carousel's top-left corner stops and restarts it. When the reader's system asks for reduced motion, the carousel starts paused and the button starts it.
+
+The card library (`@spteck/react-controls-v2`) offers no autoplay option, so the web part presses the carousel's own *Next slide* and *Previous slide* buttons on a timer. This keeps the carousel's look and swipe behaviour unchanged, and it was verified in a browser against version 2.7.7, which the lockfile pins. If a future version of the library renames those buttons, automatic scrolling silently stops while the carousel itself keeps working.
 
 ### News to show
 
@@ -74,6 +82,7 @@ This sample is optimally compatible with the following environment configuration
 | 0.0.1 | May 17, 2026 | Initial release |
 | 1.1.0 | November 5, 2026 | Show site name and Show description switches; enterprise keyword and page-property filter; Lithuanian locale fix |
 | 1.2.0 | November 5, 2026 | Page-property filter removed; Selected news posts mode added, with ordering |
+| 1.3.0 | November 5, 2026 | Automatic scrolling for the Carousel layout, with adjustable speed and pause control |
 
 ## Contributors
 

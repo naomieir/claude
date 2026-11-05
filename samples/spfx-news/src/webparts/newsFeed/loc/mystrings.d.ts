@@ -39,6 +39,10 @@ declare interface INewsFeedWebPartStrings {
   ShowViewsLikesLabel: string;
   ShowCommentsLabel: string;
   ShowShareLabel: string;
+  CarouselAutoplayLabel: string;
+  CarouselIntervalLabel: string;
+  CarouselPauseLabel: string;
+  CarouselPlayLabel: string;
   NewsModeAutoLabel: string;
   NewsModeSelectedLabel: string;
   FilterKeywordsDescriptionLabel: string;

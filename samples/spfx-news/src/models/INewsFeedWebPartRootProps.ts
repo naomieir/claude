@@ -29,6 +29,8 @@ export interface INewsFeedWebPartRootProps extends INewsFeedWebPartProps {
   showSiteName: boolean;
   showDescription: boolean;
   newsFilter: INewsFilter;
+  carouselAutoplay: boolean;
+  carouselIntervalSeconds: number;
   displayMode: DisplayMode;
   onConfigure: () => void;
 }
