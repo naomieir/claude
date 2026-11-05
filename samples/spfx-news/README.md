@@ -24,30 +24,28 @@ A SharePoint Framework (SPFx) web part that displays SharePoint news in **6 conf
 - **Theme-aware** — Adapts to SharePoint themes and Teams light/dark/high-contrast themes automatically
 - **Localized UI** — Ships with 48 language translations
 
-## Additions in version 1.1
+## Additions in versions 1.1 and 1.2
 
-Version 1.1 adds two display switches and a content filter. Existing web parts keep their current appearance and content after upgrading, because the switches default to on and the filter defaults to empty.
+These versions add two display switches and a choice of which news to show. Existing web parts keep their current appearance and content after upgrading: the switches default to on, and the content defaults to the newest news with no filter.
 
 ### Show site name, show description
 
 The **Display** group has two new switches. **Show site name** controls the label above each headline naming the site the news post came from. **Show description** controls the page description under the headline. Turning a switch off removes the element from every layout. Neither switch causes the news to be fetched again.
 
-### Filter
+### News to show
 
-A new **Filter** group restricts the feed to news pages that match conditions set by the editor, in the spirit of the "Page properties" filter in SharePoint's built-in News web part. The conditions are added to the Microsoft Graph search query itself, so the web part still returns up to the configured maximum number of matching items, rather than fetching that number and discarding non-matches.
+The **News to show** group offers two modes.
 
-**Enterprise keywords.** Type a keyword and press Enter to add it. With two or more keywords, choose whether a page must match *any* or *all* of them. Keywords are matched against the search property `TaxKeyword` by default. The **Keyword search property** box lets an administrator point the filter at another managed property if their tenant's search schema differs.
+**Newest news from the data source** (the default) shows the most recent news from the sites chosen under **Data Source**. An optional **enterprise keywords** filter narrows it: type a keyword and press Enter to add it, and with two or more keywords choose whether a page must match *any* or *all* of them. The keywords are added to the Microsoft Graph search query itself, so the web part still returns up to the configured maximum number of *matching* posts, rather than fetching that number and discarding non-matches. Keywords are matched against the search property `TaxKeyword` by default. The **Keyword search property** box lets an administrator point the filter at another managed property if the tenant's search schema differs, and the pane shows the resulting search condition (KQL) for checking.
 
-**Page properties.** Select **Add page property**, choose a column, a condition (*is*, *equals exactly* or *is not*) and a value. The column list comes from the current site's Site Pages library. Each column is mapped to the managed property that SharePoint creates automatically for a site column: `<Column>OWSTEXT` for single-line text, `OWSCHCS` for choice, `OWSCHCM` for multi-choice, `OWSDATE` for date, `OWSBOOL` for yes/no, `OWSUSER` for person, `OWSNMBR` for number, `OWSCURR` for currency, `OWSMTXT` for multi-line text, and `owstaxId<Column>` for managed metadata. For any other property, such as a mapped `RefinableString00`, choose **Other search property…** and type its name. With two or more positive conditions, choose *any* or *all*. *Is not* conditions always narrow the results.
-
-The editor shows the resulting search condition (KQL) so that its effect can be checked.
+**Selected news posts** shows exactly the posts the editor picks. Search by title, add up to 30 posts, and arrange them with the up and down arrows; the feed shows them in that order. In this mode the **Data Source** and maximum-items settings do not apply.
 
 **Limitations.**
 
-- SharePoint creates the automatic managed properties only for *site* columns that hold a value on at least one crawled item. Columns created directly in a single Site Pages library, and columns that have never held a value, cannot be filtered through the column list. For those, map the crawled property to a refinable managed property in the search schema and use **Other search property…**.
-- Search reflects changes only after the next crawl, so a newly tagged page can take a while to appear.
-- The column list is read from the site hosting the web part. When the feed shows news from other sites, make sure those sites use the same site columns, for example from the content type hub.
-- Values are matched as search phrases. Double quotes are removed from values, because KQL cannot escape them.
+- Search reflects changes only after the next crawl, so a newly tagged or newly published page can take a while to become available to the keyword filter and the post search.
+- Picked posts are stored by page URL. If a page is renamed, moved, deleted or unpublished, or the viewer cannot read it, it is silently left out until it is picked again.
+- Each viewer sees only the picked posts they have permission to read, because the posts are retrieved through search with the viewer's own permissions.
+- Keyword values are matched as search phrases; double quotes are removed, because KQL cannot escape them.
 - The new interface text is in English in every language; translations other than English are still to be done.
 
 ## Compatibility
@@ -74,6 +72,8 @@ This sample is optimally compatible with the following environment configuration
 | Version | Date | Comments |
 | ------- | ---- | -------- |
 | 0.0.1 | May 17, 2026 | Initial release |
+| 1.1.0 | November 5, 2026 | Show site name and Show description switches; enterprise keyword and page-property filter; Lithuanian locale fix |
+| 1.2.0 | November 5, 2026 | Page-property filter removed; Selected news posts mode added, with ordering |
 
 ## Contributors
 

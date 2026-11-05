@@ -1,9 +1,9 @@
 import { BaseComponentContext } from '@microsoft/sp-component-base';
 import { SPHttpClient } from '@microsoft/sp-http';
 import { INewsPost } from '@spteck/m365-hooks';
-import { INewsFilter } from '../models/INewsFilter';
+import { INewsFilter, ISelectedNewsPost, MAX_SELECTED_POSTS } from '../models/INewsFilter';
 import { DataSourceMode } from '../models/INewsFeedWebPartProps';
-import { buildNewsQuery } from '../utils/kqlBuilder';
+import { buildKeywordQuery, buildSelectedPostsQuery, buildTitleSearchQuery } from '../utils/kqlBuilder';
 
 /*
  * Filtered counterpart of `useSharePointNews` from @spteck/m365-hooks 1.3.6.
@@ -107,7 +107,7 @@ function mapHits(hits: ISearchHit[], orgSites: IOrgNewsSite[]): INewsPost[] {
   });
 }
 
-/** Fetches news for the given data source, narrowed by the filter. */
+/** Fetches news for the given data source, narrowed by enterprise keywords. */
 export async function getFilteredNews(
   context: BaseComponentContext,
   mode: DataSourceMode,
@@ -115,7 +115,7 @@ export async function getFilteredNews(
   maxItems: number,
   filter: INewsFilter,
 ): Promise<INewsPost[]> {
-  const queryString = buildNewsQuery(baseNewsQuery(), filter);
+  const queryString = buildKeywordQuery(baseNewsQuery(), filter);
 
   if (mode === 'selected') {
     if (selectedSiteIds.length === 0) return [];
@@ -150,31 +150,50 @@ export async function getFilteredNews(
   return mapHits(hits, orgSites);
 }
 
-interface IRestField {
-  InternalName: string;
-  Title: string;
-  TypeAsString: string;
+function normaliseUrl(url: string): string {
+  try {
+    return decodeURI(url).toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
 }
 
 /**
- * Lists the visible, non-base columns of the current site's Site Pages
- * library (base template 119), which is where page properties live.
+ * Fetches exactly the picked posts and returns them in the editor's order.
+ * Posts that search no longer returns (deleted, unpublished or no longer
+ * readable by the viewer) are skipped.
  */
-export async function getSitePagesColumns(context: BaseComponentContext): Promise<IRestField[]> {
-  const web = context.pageContext.web.absoluteUrl;
-  const listsResponse = await context.spHttpClient.get(
-    `${web}/_api/web/lists?$filter=BaseTemplate eq 119&$select=Id&$top=1`,
-    SPHttpClient.configurations.v1,
-  );
-  const lists = await listsResponse.json();
-  const listId: string | undefined = lists.value?.[0]?.Id;
-  if (!listId) return [];
-  const fieldsResponse = await context.spHttpClient.get(
-    `${web}/_api/web/lists(guid'${listId}')/fields` +
-      '?$filter=Hidden eq false and FromBaseType eq false' +
-      '&$select=InternalName,Title,TypeAsString',
-    SPHttpClient.configurations.v1,
-  );
-  const fields = await fieldsResponse.json();
-  return (fields.value as IRestField[]) ?? [];
+export async function getSelectedNews(
+  context: BaseComponentContext,
+  posts: ISelectedNewsPost[],
+): Promise<INewsPost[]> {
+  const urls = posts.slice(0, MAX_SELECTED_POSTS).map((p) => p.url);
+  const queryString = buildSelectedPostsQuery(baseNewsQuery(), urls);
+  if (!queryString) return [];
+  const [hits, orgSites] = await Promise.all([
+    executeSearch(context, queryString, urls.length),
+    fetchOrgNewsSites(context).catch(() => [] as IOrgNewsSite[]),
+  ]);
+  const byUrl: Record<string, INewsPost> = {};
+  mapHits(hits, orgSites).forEach((post) => {
+    if (post.path) byUrl[normaliseUrl(post.path)] = post;
+  });
+  const ordered: INewsPost[] = [];
+  urls.forEach((u) => {
+    const post = byUrl[normaliseUrl(u)];
+    if (post) ordered.push(post);
+  });
+  return ordered;
+}
+
+/** Searches news posts by title for the property-pane picker. */
+export async function searchNewsPosts(
+  context: BaseComponentContext,
+  text: string,
+  maxItems: number = 25,
+): Promise<ISelectedNewsPost[]> {
+  const hits = await executeSearch(context, buildTitleSearchQuery(baseNewsQuery(), text), maxItems);
+  return mapHits(hits, [])
+    .filter((post) => !!post.path)
+    .map((post) => ({ url: post.path, title: post.title, siteTitle: post.siteTitle ?? '' }));
 }

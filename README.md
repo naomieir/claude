@@ -47,7 +47,7 @@ All packages were built from `pnp/sp-dev-fx-webparts@41b8d71609ba34d3dd5c41de76e
 | `react-rss-reader.sppkg` | `fcb53167-e0d5-4ed1-9648-149146649aa1` | 1.1.0.0 | SPFx 1.22.2 (Heft) / Node 22 | Yes | None |
 | `react-sp-countdown-timer.sppkg` | `57a9d455-30bd-4a4f-9b50-92ccc8f4506e` | 1.0.0.0 | SPFx 1.21.1 / Node 22 | Yes | None |
 | `react-taxonomy-file-explorer.sppkg` | `5697a573-1bd1-4ff3-96f1-82263c8eb008` | 1.0.0.0 | SPFx 1.22.1 (gulp) / Node 22 | No | None |
-| `spfx-news.sppkg` | `1cdf8b67-50c3-460a-a478-36e6be760ba2` | 1.1.0.0 (enhanced) | SPFx 1.22.2 (Heft) / Node 22 | Yes | `Sites.Read.All` |
+| `spfx-news.sppkg` | `1cdf8b67-50c3-460a-a478-36e6be760ba2` | 1.2.0.0 (enhanced) | SPFx 1.22.2 (Heft) / Node 22 | Yes | `Sites.Read.All` |
 
 The "build toolchain" column gives the version of `@microsoft/sp-build-web` (or the Heft rig), not the version recorded in each sample's `.yo-rc.json`. The two often disagree, because many samples have had their build tools upgraded without their scaffold metadata being updated. `react-news`, for example, declares SPFx 1.10 but builds with the 1.22.1 toolchain. Node versions follow Microsoft's compatibility matrix for the toolchain in use (Microsoft, 2026a).
 
@@ -106,7 +106,7 @@ ccb66d473d4587a1806785c891df2190d13655fa0221dc538078b0961b1310e5  react-public-h
 dcc3bb59f0e6bcc63f42f4ccf7a94e26355dbd7d3bd91d5c55ac402751eb821b  react-rss-reader.sppkg
 d1bee34802585481064cca19bbb6434145bda1715908ba13cd6e353a102c90b2  react-sp-countdown-timer.sppkg
 7823dbf10c07d79a324459669caefa3c578364807daf001164aebdad87fd328c  react-taxonomy-file-explorer.sppkg
-60fc86a2bf72433a8056ea3f6a5619ae49f11facef929c01e47f5046ec440c15  spfx-news.sppkg
+00e3108b328cc6955f2712b0548801793865850472a2b5c79acce69efbac9b79  spfx-news.sppkg
 ```
 
 ## Changes made to upstream source
@@ -128,15 +128,15 @@ Two environment workarounds applied across the older samples. SPFx 1.10–1.12 l
 
 README screenshots and demo GIFs were dropped from `samples/` to keep the repository small (about 76 MB in total, mostly lockfiles). They remain available upstream, so image links in the individual sample READMEs will not resolve here.
 
-## Enhancements to SPFx News (1.1.0.0)
+## Enhancements to SPFx News (1.2.0.0)
 
-The `spfx-news` package carries features that the upstream sample lacks. They are documented in full in [`samples/spfx-news/README.md`](samples/spfx-news/README.md#additions-in-version-11).
+The `spfx-news` package carries features that the upstream sample lacks. They are documented in full in [`samples/spfx-news/README.md`](samples/spfx-news/README.md#additions-in-versions-11-and-12).
 
 - **Show site name** and **Show description** switches in the Display group.
-- A **Filter** group that limits the feed to pages tagged with given enterprise keywords and/or matching page-property conditions. The conditions are compiled into the Graph search query, so the maximum-items setting still counts only matching pages.
+- A **News to show** group with two modes. *Newest news from the data source* can be narrowed by **enterprise keywords** (any or all); the condition is compiled into the Graph search query, so the maximum-items setting still counts only matching posts. *Selected news posts* lets editors search for up to 30 specific posts, put them in order, and show exactly those.
 - A fix to the upstream Lithuanian (`lt-lt`) language file, whose unescaped quotation mark stopped it loading, so the web part failed for users with Lithuanian as their display language.
 
-The solution ID is unchanged, so uploading 1.1.0.0 to the App Catalog upgrades the existing app in place. Existing web parts keep their appearance: the new switches default to on and the filter to empty. The filter needs no new permissions, because it uses the `Sites.Read.All` Graph scope the package already requests.
+Version 1.1.0.0 also had a page-property filter; 1.2.0.0 removes it, and any page-property conditions saved by 1.1 are ignored. The solution ID is unchanged, so uploading 1.2.0.0 to the App Catalog upgrades the existing app in place. Existing web parts keep their appearance: the new switches default to on and the content to the newest news with no filter. No new permissions are needed, because everything uses the `Sites.Read.All` Graph scope the package already requests.
 
 ## Samples not packaged
 

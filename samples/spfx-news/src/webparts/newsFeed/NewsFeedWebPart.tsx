@@ -30,7 +30,7 @@ import { PropertyPaneShowComments } from '../../PropertyFields/ShowComments/Show
 import { PropertyPaneShowShare } from '../../PropertyFields/ShowShare/ShowShareField';
 import { PropertyPaneToggleSwitch } from '../../PropertyFields/Toggle/ToggleField';
 import { PropertyPaneNewsFilter } from '../../PropertyFields/NewsFilter/NewsFilterField';
-import { EMPTY_NEWS_FILTER } from '../../models/INewsFilter';
+import { normaliseNewsFilter } from '../../models/INewsFilter';
 
 export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebPartProps> {
   private _isDarkTheme: boolean = false;
@@ -93,10 +93,8 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
     if (this.properties.showDescription === undefined) {
       this.properties.showDescription = true;
     }
-    this.properties.newsFilter = {
-      ...EMPTY_NEWS_FILTER,
-      ...(this.properties.newsFilter || {}),
-    };
+    // Also drops the page-property fields saved by version 1.1.
+    this.properties.newsFilter = normaliseNewsFilter(this.properties.newsFilter);
 
     // Detect host
     if (this.context.sdks.microsoftTeams) {

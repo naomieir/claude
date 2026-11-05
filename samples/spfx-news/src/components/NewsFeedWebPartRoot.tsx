@@ -23,8 +23,8 @@ import PlaceHolder from "./PlaceHolder/PlaceHolder";
 import { EmptyState } from "./EmptyState/EmptyState";
 import { ErrorBoundary } from "./ErrorBoundary/ErrorBoundary";
 import { mapNewsPostToFeedItem } from "../utils/mappers";
-import { describeNewsFilterKql } from "../utils/kqlBuilder";
-import { getFilteredNews } from "../services/filteredNewsSearch";
+import { newsFilterKey } from "../utils/kqlBuilder";
+import { getFilteredNews, getSelectedNews } from "../services/filteredNewsSearch";
 import * as strings from "NewsFeedWebPartStrings";
 import { NewsFeedListSkeleton } from "./NewsFeedListSkeleton/NewsFeedListSkeleton";
 import { NewsFeedGridSkeleton } from "./NewsFeedGridSkeleton/NewsFeedGridSkeleton";
@@ -60,9 +60,9 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
 }) => {
   const selectedSiteIdsKey = selectedSites.map((s) => s.id).join(",");
   const selectedSiteIds = selectedSites.map((s) => s.id);
-  // The filter's KQL doubles as a stable dependency key: it changes exactly
-  // when the effective filter changes.
-  const filterKey = describeNewsFilterKql(newsFilter);
+  // Changes exactly when the content to show changes (mode, keywords or picked posts).
+  const filterKey = newsFilterKey(newsFilter);
+  const isSelectedPostsMode = newsFilter?.mode === "selected";
 
   const { getAllNews, getNewsForSelectedSites, getOrganizationSitesNews } =
     useSharePointNews(spfxContext);
@@ -101,6 +101,9 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
   // Always-current fetch function — updated every render so polling never captures stale deps
   const doFetchRef = useRef<() => Promise<INewsPost[]>>();
   doFetchRef.current = async (): Promise<INewsPost[]> => {
+    if (isSelectedPostsMode) {
+      return getSelectedNews(spfxContext, newsFilter.selectedPosts);
+    }
     if (filterKey) {
       return getFilteredNews(
         spfxContext,
@@ -252,7 +255,19 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
     [counts, showSiteName, showDescription],
   );
 
-  if (dataSourceMode === "selected" && selectedSites.length === 0) {
+  if (isSelectedPostsMode && newsFilter.selectedPosts.length === 0) {
+    return (
+      <PlaceHolder
+        title={strings.SelectedPostsEmptyTitleLabel}
+        description={strings.SelectedPostsEmptyDescriptionLabel}
+        buttonLabel={strings.EmptyStateConfigureLabel}
+        onConfigure={onConfigure}
+        height={height}
+      />
+    );
+  }
+
+  if (!isSelectedPostsMode && dataSourceMode === "selected" && selectedSites.length === 0) {
     return (
       <PlaceHolder
         title={strings.EmptyStateTitleLabel}

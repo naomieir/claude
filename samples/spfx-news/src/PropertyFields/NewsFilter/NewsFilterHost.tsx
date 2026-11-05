@@ -1,35 +1,34 @@
 import * as React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
-  Dropdown,
   Input,
-  Option,
   Radio,
   RadioGroup,
-  Spinner,
   Tag,
   TagGroup,
   tokens,
 } from '@fluentui/react-components';
 import { Icon } from '@iconify/react';
-import { FluentUIProvider, StackV2, TypographyControl } from '@spteck/react-controls-v2';
+import {
+  FluentUIProvider,
+  IItemPickerOption,
+  ItemPicker,
+  StackV2,
+  TypographyControl,
+} from '@spteck/react-controls-v2';
 import * as strings from 'NewsFeedWebPartStrings';
 import { INewsFilterComponentProps } from '../../models/INewsFilterFieldProps';
 import {
   DEFAULT_KEYWORD_MANAGED_PROPERTY,
   FilterMatchMode,
-  IFilterableColumn,
   INewsFilter,
-  IPagePropertyFilter,
-  PagePropertyOperator,
+  ISelectedNewsPost,
+  MAX_SELECTED_POSTS,
+  NewsSelectionMode,
 } from '../../models/INewsFilter';
-import { describeNewsFilterKql, isValidManagedProperty, toFilterableColumns } from '../../utils/kqlBuilder';
-import { getSitePagesColumns } from '../../services/filteredNewsSearch';
-
-const CUSTOM_PROPERTY_KEY = '__custom__';
-
-const newId = (): string => `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+import { describeKeywordKql, isValidManagedProperty } from '../../utils/kqlBuilder';
+import { searchNewsPosts } from '../../services/filteredNewsSearch';
 
 /** Text input that reports its value only on blur or Enter. */
 const CommitInput: React.FC<{
@@ -61,47 +60,17 @@ const CommitInput: React.FC<{
   );
 };
 
-const MatchModeChoice: React.FC<{
-  value: FilterMatchMode;
-  onChange: (value: FilterMatchMode) => void;
-}> = ({ value, onChange }) => (
-  <RadioGroup
-    layout="horizontal"
-    value={value}
-    onChange={(_, data) => onChange(data.value as FilterMatchMode)}
-  >
-    <Radio value="any" label={strings.FilterMatchAnyLabel} />
-    <Radio value="all" label={strings.FilterMatchAllLabel} />
-  </RadioGroup>
-);
-
-const OPERATOR_LABELS: Record<PagePropertyOperator, string> = {
-  is: strings.FilterOperatorIsLabel,
-  equals: strings.FilterOperatorEqualsLabel,
-  isNot: strings.FilterOperatorIsNotLabel,
-};
+const postToOption = (post: ISelectedNewsPost): IItemPickerOption => ({
+  value: post.url,
+  text: post.title,
+  secondaryText: post.siteTitle,
+});
 
 const NewsFilterHost: React.FC<INewsFilterComponentProps> = ({ spfxContext, value, theme, onChange }) => {
   const [filter, setFilter] = useState<INewsFilter>(value);
   const [keywordDraft, setKeywordDraft] = useState('');
-  const [columns, setColumns] = useState<IFilterableColumn[]>([]);
-  const [columnsState, setColumnsState] = useState<'loading' | 'loaded' | 'error'>('loading');
-
-  useEffect(() => {
-    let cancelled = false;
-    getSitePagesColumns(spfxContext)
-      .then((fields) => {
-        if (cancelled) return;
-        setColumns(toFilterableColumns(fields));
-        setColumnsState('loaded');
-      })
-      .catch(() => {
-        if (!cancelled) setColumnsState('error');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [spfxContext]);
+  const [results, setResults] = useState<ISelectedNewsPost[]>([]);
+  const searchCounter = useRef(0);
 
   const update = useCallback(
     (next: INewsFilter): void => {
@@ -111,7 +80,7 @@ const NewsFilterHost: React.FC<INewsFilterComponentProps> = ({ spfxContext, valu
     [onChange],
   );
 
-  // ---- Enterprise keywords -------------------------------------------------
+  // ---- Enterprise keywords (automatic mode) ---------------------------------
 
   const addKeyword = (): void => {
     const keyword = keywordDraft.replace(/"/g, '').trim();
@@ -124,245 +93,219 @@ const NewsFilterHost: React.FC<INewsFilterComponentProps> = ({ spfxContext, valu
   const removeKeyword = (keyword: string): void =>
     update({ ...filter, keywords: filter.keywords.filter((k) => k !== keyword) });
 
-  // ---- Page properties -----------------------------------------------------
+  // ---- Selected posts -------------------------------------------------------
 
-  const updateRow = (id: string, patch: Partial<IPagePropertyFilter>): void =>
-    update({
-      ...filter,
-      pageProperties: filter.pageProperties.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+  const handleSearch = useCallback(
+    (text: string): void => {
+      const run = ++searchCounter.current;
+      if (!text.trim()) {
+        setResults([]);
+        return;
+      }
+      searchNewsPosts(spfxContext, text)
+        .then((found) => {
+          // Ignore responses that arrive after a newer search started.
+          if (run === searchCounter.current) setResults(found);
+        })
+        .catch(() => {
+          if (run === searchCounter.current) setResults([]);
+        });
+    },
+    [spfxContext],
+  );
+
+  const options = useMemo(() => results.map(postToOption), [results]);
+  const selectedOptions = useMemo(() => filter.selectedPosts.map(postToOption), [filter.selectedPosts]);
+
+  const handleSelectionChange = (selected: IItemPickerOption[]): void => {
+    const known: Record<string, ISelectedNewsPost> = {};
+    [...filter.selectedPosts, ...results].forEach((p) => {
+      known[p.url] = p;
     });
-
-  const removeRow = (id: string): void =>
-    update({ ...filter, pageProperties: filter.pageProperties.filter((r) => r.id !== id) });
-
-  const addRow = (): void => {
-    const first = columns[0];
-    update({
-      ...filter,
-      pageProperties: [
-        ...filter.pageProperties,
-        {
-          id: newId(),
-          fieldTitle: first ? first.title : '',
-          managedProperty: first ? first.managedProperty : '',
-          operator: 'is',
-          value: '',
-        },
-      ],
-    });
+    // Keep existing posts in their current order and append new ones at the end.
+    const wanted = new Set(selected.map((o) => o.value));
+    const kept = filter.selectedPosts.filter((p) => wanted.has(p.url));
+    const added = selected
+      .filter((o) => !kept.some((p) => p.url === o.value))
+      .map((o) => known[o.value] ?? { url: o.value, title: o.text, siteTitle: o.secondaryText ?? '' });
+    update({ ...filter, selectedPosts: [...kept, ...added].slice(0, MAX_SELECTED_POSTS) });
   };
 
-  const columnByProperty = useMemo(() => {
-    const map: Record<string, IFilterableColumn> = {};
-    columns.forEach((c) => {
-      map[c.managedProperty] = c;
-    });
-    return map;
-  }, [columns]);
+  const movePost = (index: number, delta: number): void => {
+    const target = index + delta;
+    if (target < 0 || target >= filter.selectedPosts.length) return;
+    const posts = [...filter.selectedPosts];
+    const [moved] = posts.splice(index, 1);
+    posts.splice(target, 0, moved);
+    update({ ...filter, selectedPosts: posts });
+  };
 
-  const positivePropertyCount = filter.pageProperties.filter((r) => r.operator !== 'isNot').length;
-  const preview = describeNewsFilterKql(filter);
+  const removePost = (url: string): void =>
+    update({ ...filter, selectedPosts: filter.selectedPosts.filter((p) => p.url !== url) });
+
+  const keywordPreview = describeKeywordKql(filter);
 
   return (
-    <FluentUIProvider theme={theme} targetDocument={document} applicationName="newfeed-filter-property-pane">
+    <FluentUIProvider
+      theme={theme}
+      targetDocument={document}
+      applicationName="newfeed-filter-property-pane"
+      applyStylesToPortals
+    >
       <StackV2 direction="vertical" gap="m" paddingTop="s">
-        <TypographyControl fontSize="s" color={tokens.colorNeutralForeground2}>
-          {strings.FilterDescriptionLabel}
-        </TypographyControl>
+        <RadioGroup
+          layout="vertical"
+          value={filter.mode}
+          onChange={(_, data) => update({ ...filter, mode: data.value as NewsSelectionMode })}
+        >
+          <Radio value="auto" label={strings.NewsModeAutoLabel} />
+          <Radio value="selected" label={strings.NewsModeSelectedLabel} />
+        </RadioGroup>
 
-        {/* Enterprise keywords */}
-        <StackV2 direction="vertical" gap="s">
-          <TypographyControl fontSize="s" fontWeight="semibold" color={tokens.colorNeutralForeground1}>
-            {strings.FilterKeywordsSectionLabel}
-          </TypographyControl>
-          <StackV2 direction="horizontal" gap="s" alignItems="center">
-            <Input
-              size="small"
-              style={{ flexGrow: 1 }}
-              value={keywordDraft}
-              placeholder={strings.FilterKeywordPlaceholder}
-              aria-label={strings.FilterKeywordsSectionLabel}
-              onChange={(_, data) => setKeywordDraft(data.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') addKeyword();
-              }}
-            />
-            <Button size="small" onClick={addKeyword} disabled={!keywordDraft.trim()}>
-              {strings.FilterAddLabel}
-            </Button>
-          </StackV2>
-          {filter.keywords.length > 0 && (
-            <TagGroup
-              size="small"
-              aria-label={strings.FilterKeywordsSectionLabel}
-              onDismiss={(_, data) => removeKeyword(String(data.value))}
-              style={{ flexWrap: 'wrap', gap: 4 }}
-            >
-              {filter.keywords.map((k) => (
-                <Tag key={k} value={k} dismissible dismissIcon={{ 'aria-label': `${strings.FilterRemoveLabel} ${k}` }}>
-                  {k}
-                </Tag>
-              ))}
-            </TagGroup>
-          )}
-          {filter.keywords.length > 1 && (
-            <MatchModeChoice value={filter.keywordMatch} onChange={(m) => update({ ...filter, keywordMatch: m })} />
-          )}
-          <StackV2 direction="vertical" gap="xs">
+        {filter.mode === 'auto' && (
+          <StackV2 direction="vertical" gap="s">
+            <TypographyControl fontSize="s" fontWeight="semibold" color={tokens.colorNeutralForeground1}>
+              {strings.FilterKeywordsSectionLabel}
+            </TypographyControl>
             <TypographyControl fontSize="xs" color={tokens.colorNeutralForeground2}>
-              {strings.FilterKeywordPropertyLabel}
+              {strings.FilterKeywordsDescriptionLabel}
             </TypographyControl>
-            <CommitInput
-              value={filter.keywordManagedProperty}
-              placeholder={DEFAULT_KEYWORD_MANAGED_PROPERTY}
-              ariaLabel={strings.FilterKeywordPropertyLabel}
-              invalid={!isValidManagedProperty(filter.keywordManagedProperty)}
-              onCommit={(v) =>
-                update({ ...filter, keywordManagedProperty: v.trim() || DEFAULT_KEYWORD_MANAGED_PROPERTY })
-              }
-            />
-          </StackV2>
-        </StackV2>
-
-        {/* Page properties */}
-        <StackV2 direction="vertical" gap="s">
-          <TypographyControl fontSize="s" fontWeight="semibold" color={tokens.colorNeutralForeground1}>
-            {strings.FilterPagePropertiesSectionLabel}
-          </TypographyControl>
-          {columnsState === 'loading' && <Spinner size="tiny" />}
-          {columnsState === 'error' && (
-            <TypographyControl fontSize="xs" color={tokens.colorPaletteRedForeground1}>
-              {strings.FilterColumnsErrorLabel}
-            </TypographyControl>
-          )}
-          {columnsState === 'loaded' && columns.length === 0 && (
-            <TypographyControl fontSize="xs" color={tokens.colorNeutralForeground2}>
-              {strings.FilterNoColumnsLabel}
-            </TypographyControl>
-          )}
-
-          {filter.pageProperties.map((row) => {
-            const knownColumn = columnByProperty[row.managedProperty];
-            const selectedKey = knownColumn ? row.managedProperty : CUSTOM_PROPERTY_KEY;
-            return (
-              <StackV2
-                key={row.id}
-                direction="vertical"
-                gap="xs"
-                padding="s"
-                style={{ border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium }}
+            <StackV2 direction="horizontal" gap="s" alignItems="center">
+              <Input
+                size="small"
+                style={{ flexGrow: 1 }}
+                value={keywordDraft}
+                placeholder={strings.FilterKeywordPlaceholder}
+                aria-label={strings.FilterKeywordsSectionLabel}
+                onChange={(_, data) => setKeywordDraft(data.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') addKeyword();
+                }}
+              />
+              <Button size="small" onClick={addKeyword} disabled={!keywordDraft.trim()}>
+                {strings.FilterAddLabel}
+              </Button>
+            </StackV2>
+            {filter.keywords.length > 0 && (
+              <TagGroup
+                size="small"
+                aria-label={strings.FilterKeywordsSectionLabel}
+                onDismiss={(_, data) => removeKeyword(String(data.value))}
+                style={{ flexWrap: 'wrap', gap: 4 }}
               >
-                <Dropdown
-                  size="small"
-                  aria-label={strings.FilterPropertyLabel}
-                  value={knownColumn ? knownColumn.title : strings.FilterCustomPropertyOption}
-                  selectedOptions={[selectedKey]}
-                  onOptionSelect={(_, data) => {
-                    if (data.optionValue === CUSTOM_PROPERTY_KEY) {
-                      updateRow(row.id, { fieldTitle: '', managedProperty: knownColumn ? '' : row.managedProperty });
-                    } else {
-                      const col = columnByProperty[data.optionValue as string];
-                      if (col) updateRow(row.id, { fieldTitle: col.title, managedProperty: col.managedProperty });
-                    }
+                {filter.keywords.map((k) => (
+                  <Tag key={k} value={k} dismissible dismissIcon={{ 'aria-label': `${strings.FilterRemoveLabel} ${k}` }}>
+                    {k}
+                  </Tag>
+                ))}
+              </TagGroup>
+            )}
+            {filter.keywords.length > 1 && (
+              <RadioGroup
+                layout="horizontal"
+                value={filter.keywordMatch}
+                onChange={(_, data) => update({ ...filter, keywordMatch: data.value as FilterMatchMode })}
+              >
+                <Radio value="any" label={strings.FilterMatchAnyLabel} />
+                <Radio value="all" label={strings.FilterMatchAllLabel} />
+              </RadioGroup>
+            )}
+            <StackV2 direction="vertical" gap="xs">
+              <TypographyControl fontSize="xs" color={tokens.colorNeutralForeground2}>
+                {strings.FilterKeywordPropertyLabel}
+              </TypographyControl>
+              <CommitInput
+                value={filter.keywordManagedProperty}
+                placeholder={DEFAULT_KEYWORD_MANAGED_PROPERTY}
+                ariaLabel={strings.FilterKeywordPropertyLabel}
+                invalid={!isValidManagedProperty(filter.keywordManagedProperty)}
+                onCommit={(v) =>
+                  update({ ...filter, keywordManagedProperty: v.trim() || DEFAULT_KEYWORD_MANAGED_PROPERTY })
+                }
+              />
+            </StackV2>
+            {keywordPreview && (
+              <StackV2 direction="vertical" gap="xs">
+                <TypographyControl fontSize="xs" color={tokens.colorNeutralForeground2}>
+                  {strings.FilterPreviewLabel}
+                </TypographyControl>
+                <code
+                  style={{
+                    fontSize: 11,
+                    wordBreak: 'break-all',
+                    padding: 6,
+                    borderRadius: tokens.borderRadiusMedium,
+                    background: tokens.colorNeutralBackground3,
+                    color: tokens.colorNeutralForeground1,
                   }}
                 >
-                  {columns.map((c) => (
-                    <Option key={c.managedProperty} value={c.managedProperty} text={c.title}>
-                      {c.title}
-                    </Option>
-                  ))}
-                  <Option value={CUSTOM_PROPERTY_KEY} text={strings.FilterCustomPropertyOption}>
-                    {strings.FilterCustomPropertyOption}
-                  </Option>
-                </Dropdown>
-                {!knownColumn && (
-                  <CommitInput
-                    value={row.managedProperty}
-                    placeholder={strings.FilterManagedPropertyPlaceholder}
-                    ariaLabel={strings.FilterManagedPropertyPlaceholder}
-                    invalid={!!row.managedProperty && !isValidManagedProperty(row.managedProperty)}
-                    onCommit={(v) => updateRow(row.id, { managedProperty: v.trim() })}
-                  />
-                )}
-                <StackV2 direction="horizontal" gap="s" alignItems="center">
-                  <Dropdown
-                    size="small"
-                    style={{ minWidth: 0, width: 120 }}
-                    aria-label={strings.FilterOperatorLabel}
-                    value={OPERATOR_LABELS[row.operator]}
-                    selectedOptions={[row.operator]}
-                    onOptionSelect={(_, data) =>
-                      updateRow(row.id, { operator: data.optionValue as PagePropertyOperator })
-                    }
-                  >
-                    {(Object.keys(OPERATOR_LABELS) as PagePropertyOperator[]).map((op) => (
-                      <Option key={op} value={op} text={OPERATOR_LABELS[op]}>
-                        {OPERATOR_LABELS[op]}
-                      </Option>
-                    ))}
-                  </Dropdown>
-                  <div style={{ flexGrow: 1, minWidth: 0 }}>
-                    <CommitInput
-                      value={row.value}
-                      placeholder={strings.FilterValuePlaceholder}
-                      ariaLabel={strings.FilterValuePlaceholder}
-                      onCommit={(v) => updateRow(row.id, { value: v })}
-                    />
-                  </div>
-                  <Button
-                    size="small"
-                    appearance="subtle"
-                    aria-label={strings.FilterRemoveLabel}
-                    title={strings.FilterRemoveLabel}
-                    icon={<Icon icon="fluent:delete-20-regular" />}
-                    onClick={() => removeRow(row.id)}
-                  />
-                </StackV2>
+                  {keywordPreview}
+                </code>
               </StackV2>
-            );
-          })}
+            )}
+          </StackV2>
+        )}
 
-          {positivePropertyCount > 1 && (
-            <MatchModeChoice value={filter.propertyMatch} onChange={(m) => update({ ...filter, propertyMatch: m })} />
-          )}
-          <Button
-            size="small"
-            appearance="secondary"
-            icon={<Icon icon="fluent:add-20-regular" />}
-            onClick={addRow}
-            disabled={columnsState === 'loading'}
-          >
-            {strings.FilterAddPagePropertyLabel}
-          </Button>
-        </StackV2>
-
-        {/* Generated condition */}
-        {preview && (
-          <StackV2 direction="vertical" gap="xs">
+        {filter.mode === 'selected' && (
+          <StackV2 direction="vertical" gap="s">
             <TypographyControl fontSize="xs" color={tokens.colorNeutralForeground2}>
-              {strings.FilterPreviewLabel}
+              {strings.SelectedPostsDescriptionLabel}
             </TypographyControl>
-            <code
-              style={{
-                fontSize: 11,
-                wordBreak: 'break-all',
-                padding: 6,
-                borderRadius: tokens.borderRadiusMedium,
-                background: tokens.colorNeutralBackground3,
-                color: tokens.colorNeutralForeground1,
-              }}
-            >
-              {preview}
-            </code>
-            <Button
-              size="small"
-              appearance="subtle"
-              onClick={() =>
-                update({ ...filter, keywords: [], pageProperties: [] })
-              }
-            >
-              {strings.FilterClearLabel}
-            </Button>
+            <ItemPicker
+              options={options}
+              selectedOptions={selectedOptions}
+              placeholder={strings.SelectedPostsSearchPlaceholder}
+              noResultsMessage={strings.SelectedPostsNoResultsLabel}
+              maxSelectedOptions={MAX_SELECTED_POSTS}
+              width="100%"
+              onSearchChange={handleSearch}
+              onSelectionChange={handleSelectionChange}
+            />
+            {filter.selectedPosts.length > 1 && (
+              <StackV2 direction="vertical" gap="xs">
+                <TypographyControl fontSize="xs" fontWeight="semibold" color={tokens.colorNeutralForeground1}>
+                  {strings.SelectedPostsOrderLabel}
+                </TypographyControl>
+                {filter.selectedPosts.map((post, index) => (
+                  <StackV2 key={post.url} direction="horizontal" gap="xs" alignItems="center">
+                    <TypographyControl fontSize="xs" color={tokens.colorNeutralForeground2}>
+                      {index + 1}.
+                    </TypographyControl>
+                    <div style={{ flexGrow: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={post.title}>
+                      <TypographyControl fontSize="xs" color={tokens.colorNeutralForeground1}>
+                        {post.title}
+                      </TypographyControl>
+                    </div>
+                    <Button
+                      size="small"
+                      appearance="subtle"
+                      aria-label={`${strings.SelectedPostsMoveUpLabel}: ${post.title}`}
+                      title={strings.SelectedPostsMoveUpLabel}
+                      icon={<Icon icon="fluent:arrow-up-20-regular" />}
+                      disabled={index === 0}
+                      onClick={() => movePost(index, -1)}
+                    />
+                    <Button
+                      size="small"
+                      appearance="subtle"
+                      aria-label={`${strings.SelectedPostsMoveDownLabel}: ${post.title}`}
+                      title={strings.SelectedPostsMoveDownLabel}
+                      icon={<Icon icon="fluent:arrow-down-20-regular" />}
+                      disabled={index === filter.selectedPosts.length - 1}
+                      onClick={() => movePost(index, 1)}
+                    />
+                    <Button
+                      size="small"
+                      appearance="subtle"
+                      aria-label={`${strings.FilterRemoveLabel}: ${post.title}`}
+                      title={strings.FilterRemoveLabel}
+                      icon={<Icon icon="fluent:dismiss-20-regular" />}
+                      onClick={() => removePost(post.url)}
+                    />
+                  </StackV2>
+                ))}
+              </StackV2>
+            )}
           </StackV2>
         )}
       </StackV2>
