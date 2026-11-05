@@ -39,6 +39,31 @@ declare interface INewsFeedWebPartStrings {
   ShowViewsLikesLabel: string;
   ShowCommentsLabel: string;
   ShowShareLabel: string;
+  ShowSiteNameLabel: string;
+  ShowDescriptionLabel: string;
+  FilterGroupName: string;
+  FilterDescriptionLabel: string;
+  FilterKeywordsSectionLabel: string;
+  FilterKeywordPlaceholder: string;
+  FilterKeywordPropertyLabel: string;
+  FilterAddLabel: string;
+  FilterRemoveLabel: string;
+  FilterMatchAnyLabel: string;
+  FilterMatchAllLabel: string;
+  FilterPagePropertiesSectionLabel: string;
+  FilterPropertyLabel: string;
+  FilterCustomPropertyOption: string;
+  FilterManagedPropertyPlaceholder: string;
+  FilterOperatorLabel: string;
+  FilterOperatorIsLabel: string;
+  FilterOperatorEqualsLabel: string;
+  FilterOperatorIsNotLabel: string;
+  FilterValuePlaceholder: string;
+  FilterAddPagePropertyLabel: string;
+  FilterColumnsErrorLabel: string;
+  FilterNoColumnsLabel: string;
+  FilterPreviewLabel: string;
+  FilterClearLabel: string;
 }
 
 declare module 'NewsFeedWebPartStrings' {

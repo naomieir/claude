@@ -24,6 +24,32 @@ A SharePoint Framework (SPFx) web part that displays SharePoint news in **6 conf
 - **Theme-aware** — Adapts to SharePoint themes and Teams light/dark/high-contrast themes automatically
 - **Localized UI** — Ships with 48 language translations
 
+## Additions in version 1.1
+
+Version 1.1 adds two display switches and a content filter. Existing web parts keep their current appearance and content after upgrading, because the switches default to on and the filter defaults to empty.
+
+### Show site name, show description
+
+The **Display** group has two new switches. **Show site name** controls the label above each headline naming the site the news post came from. **Show description** controls the page description under the headline. Turning a switch off removes the element from every layout. Neither switch causes the news to be fetched again.
+
+### Filter
+
+A new **Filter** group restricts the feed to news pages that match conditions set by the editor, in the spirit of the "Page properties" filter in SharePoint's built-in News web part. The conditions are added to the Microsoft Graph search query itself, so the web part still returns up to the configured maximum number of matching items, rather than fetching that number and discarding non-matches.
+
+**Enterprise keywords.** Type a keyword and press Enter to add it. With two or more keywords, choose whether a page must match *any* or *all* of them. Keywords are matched against the search property `TaxKeyword` by default. The **Keyword search property** box lets an administrator point the filter at another managed property if their tenant's search schema differs.
+
+**Page properties.** Select **Add page property**, choose a column, a condition (*is*, *equals exactly* or *is not*) and a value. The column list comes from the current site's Site Pages library. Each column is mapped to the managed property that SharePoint creates automatically for a site column: `<Column>OWSTEXT` for single-line text, `OWSCHCS` for choice, `OWSCHCM` for multi-choice, `OWSDATE` for date, `OWSBOOL` for yes/no, `OWSUSER` for person, `OWSNMBR` for number, `OWSCURR` for currency, `OWSMTXT` for multi-line text, and `owstaxId<Column>` for managed metadata. For any other property, such as a mapped `RefinableString00`, choose **Other search property…** and type its name. With two or more positive conditions, choose *any* or *all*. *Is not* conditions always narrow the results.
+
+The editor shows the resulting search condition (KQL) so that its effect can be checked.
+
+**Limitations.**
+
+- SharePoint creates the automatic managed properties only for *site* columns that hold a value on at least one crawled item. Columns created directly in a single Site Pages library, and columns that have never held a value, cannot be filtered through the column list. For those, map the crawled property to a refinable managed property in the search schema and use **Other search property…**.
+- Search reflects changes only after the next crawl, so a newly tagged page can take a while to appear.
+- The column list is read from the site hosting the web part. When the feed shows news from other sites, make sure those sites use the same site columns, for example from the content type hub.
+- Values are matched as search phrases. Double quotes are removed from values, because KQL cannot escape them.
+- The new interface text is in English in every language; translations other than English are still to be done.
+
 ## Compatibility
 
 | :warning: Important          |

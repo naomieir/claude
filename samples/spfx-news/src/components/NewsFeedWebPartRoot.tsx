@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Provider as JotaiProvider } from "jotai";
 import {
   FluentUIProvider,
@@ -23,6 +23,8 @@ import PlaceHolder from "./PlaceHolder/PlaceHolder";
 import { EmptyState } from "./EmptyState/EmptyState";
 import { ErrorBoundary } from "./ErrorBoundary/ErrorBoundary";
 import { mapNewsPostToFeedItem } from "../utils/mappers";
+import { describeNewsFilterKql } from "../utils/kqlBuilder";
+import { getFilteredNews } from "../services/filteredNewsSearch";
 import * as strings from "NewsFeedWebPartStrings";
 import { NewsFeedListSkeleton } from "./NewsFeedListSkeleton/NewsFeedListSkeleton";
 import { NewsFeedGridSkeleton } from "./NewsFeedGridSkeleton/NewsFeedGridSkeleton";
@@ -45,6 +47,9 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
   showViewsLikes,
   showComments,
   showShare,
+  showSiteName,
+  showDescription,
+  newsFilter,
   dataSourceMode,
   selectedSites,
   maxNews,
@@ -55,6 +60,9 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
 }) => {
   const selectedSiteIdsKey = selectedSites.map((s) => s.id).join(",");
   const selectedSiteIds = selectedSites.map((s) => s.id);
+  // The filter's KQL doubles as a stable dependency key: it changes exactly
+  // when the effective filter changes.
+  const filterKey = describeNewsFilterKql(newsFilter);
 
   const { getAllNews, getNewsForSelectedSites, getOrganizationSitesNews } =
     useSharePointNews(spfxContext);
@@ -93,6 +101,15 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
   // Always-current fetch function — updated every render so polling never captures stale deps
   const doFetchRef = useRef<() => Promise<INewsPost[]>>();
   doFetchRef.current = async (): Promise<INewsPost[]> => {
+    if (filterKey) {
+      return getFilteredNews(
+        spfxContext,
+        dataSourceMode,
+        selectedSiteIds,
+        maxNews,
+        newsFilter,
+      );
+    }
     if (dataSourceMode === "org") {
       return getOrganizationSitesNewsRef.current(maxNews);
     } else if (dataSourceMode === "selected") {
@@ -125,7 +142,7 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [dataSourceMode, selectedSiteIdsKey, maxNews]);
+  }, [dataSourceMode, selectedSiteIdsKey, maxNews, filterKey]);
 
   // Background refresh — silent (no skeleton), pauses when tab is hidden
   const backgroundRefresh = useCallback((): void => {
@@ -147,14 +164,18 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
   const getCommentsRef = useRef(getComments);
   getCommentsRef.current = getComments;
 
-  const [items, setItems] = React.useState<INewsFeedItem[]>([]);
+  const [counts, setCounts] = React.useState<{
+    posts: INewsPost[];
+    likes: (number | undefined)[];
+    comments: (number | undefined)[];
+  }>({ posts: [], likes: [], comments: [] });
   const [isLoadingLikes, setIsLoadingLikes] = React.useState(false);
 
   useEffect(() => {
     if (isLoading) return;
 
     if (newsPosts.length === 0) {
-      setItems([]);
+      setCounts({ posts: [], likes: [], comments: [] });
       return;
     }
 
@@ -199,14 +220,11 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
 
       if (cancelled) return;
 
-      const mapped = newsPosts.map((post: INewsPost, i: number) =>
-        mapNewsPostToFeedItem(
-          post,
-          likesResults[i]?.likesCount,
-          commentsResults[i]?.length,
-        ),
-      );
-      setItems(mapped);
+      setCounts({
+        posts: newsPosts,
+        likes: likesResults.map((r) => r?.likesCount),
+        comments: commentsResults.map((r) => r?.length),
+      });
     };
 
     fetchLikes()
@@ -221,6 +239,18 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
       cancelled = true;
     };
   }, [isLoading, newsPosts]);
+
+  // Display toggles only re-map existing data; they never trigger a fetch.
+  const items: INewsFeedItem[] = useMemo(
+    () =>
+      counts.posts.map((post: INewsPost, i: number) =>
+        mapNewsPostToFeedItem(post, counts.likes[i], counts.comments[i], {
+          showSiteName,
+          showDescription,
+        }),
+      ),
+    [counts, showSiteName, showDescription],
+  );
 
   if (dataSourceMode === "selected" && selectedSites.length === 0) {
     return (
@@ -273,6 +303,7 @@ const NewsFeedContent: React.FC<INewsFeedContentProps> = ({
         showStats={showViewsLikes}
         showComments={showComments}
         showShare={showShare}
+        showBodyText={showDescription}
         onShare={handleShare}
       />
       {shareTarget && (

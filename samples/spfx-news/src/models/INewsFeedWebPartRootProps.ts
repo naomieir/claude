@@ -4,6 +4,7 @@ import { BaseComponentContext } from '@microsoft/sp-component-base';
 import { DisplayMode } from '@microsoft/sp-core-library';
 import { DataSourceMode, INewsFeedWebPartProps } from './INewsFeedWebPartProps';
 import { ISelectedSite } from './ISelectedSite';
+import { INewsFilter } from './INewsFilter';
 
 export interface INewsFeedWebPartRootProps extends INewsFeedWebPartProps {
   context: IApplicationContext;
@@ -25,6 +26,9 @@ export interface INewsFeedWebPartRootProps extends INewsFeedWebPartProps {
   showViewsLikes: boolean;
   showComments: boolean;
   showShare: boolean;
+  showSiteName: boolean;
+  showDescription: boolean;
+  newsFilter: INewsFilter;
   displayMode: DisplayMode;
   onConfigure: () => void;
 }

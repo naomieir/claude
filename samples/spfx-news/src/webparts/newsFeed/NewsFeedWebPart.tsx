@@ -28,6 +28,9 @@ import { PropertyPaneShowAuthorDate } from '../../PropertyFields/ShowAuthorDate/
 import { PropertyPaneShowViewsLikes } from '../../PropertyFields/ShowViewsLikes/ShowViewsLikesField';
 import { PropertyPaneShowComments } from '../../PropertyFields/ShowComments/ShowCommentsField';
 import { PropertyPaneShowShare } from '../../PropertyFields/ShowShare/ShowShareField';
+import { PropertyPaneToggleSwitch } from '../../PropertyFields/Toggle/ToggleField';
+import { PropertyPaneNewsFilter } from '../../PropertyFields/NewsFilter/NewsFilterField';
+import { EMPTY_NEWS_FILTER } from '../../models/INewsFilter';
 
 export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebPartProps> {
   private _isDarkTheme: boolean = false;
@@ -83,6 +86,17 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
     if (this.properties.showShare === undefined) {
       this.properties.showShare = true;
     }
+    // Added in 1.1: existing web part instances keep their current look.
+    if (this.properties.showSiteName === undefined) {
+      this.properties.showSiteName = true;
+    }
+    if (this.properties.showDescription === undefined) {
+      this.properties.showDescription = true;
+    }
+    this.properties.newsFilter = {
+      ...EMPTY_NEWS_FILTER,
+      ...(this.properties.newsFilter || {}),
+    };
 
     // Detect host
     if (this.context.sdks.microsoftTeams) {
@@ -130,6 +144,9 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
       showViewsLikes: this.properties.showViewsLikes,
       showComments: this.properties.showComments,
       showShare: this.properties.showShare,
+      showSiteName: this.properties.showSiteName,
+      showDescription: this.properties.showDescription,
+      newsFilter: this.properties.newsFilter,
       displayMode: this.displayMode,
       onConfigure: () => this.context.propertyPane.open(),
     });
@@ -238,6 +255,26 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
                     this.render();
                   },
                 }),
+                PropertyPaneToggleSwitch('showSiteName', {
+                  label: strings.ShowSiteNameLabel,
+                  value: this.properties.showSiteName,
+                  theme: this._theme!,
+                  hostType: this._hostType,
+                  onChange: (value) => {
+                    this.properties.showSiteName = value;
+                    this.render();
+                  },
+                }),
+                PropertyPaneToggleSwitch('showDescription', {
+                  label: strings.ShowDescriptionLabel,
+                  value: this.properties.showDescription,
+                  theme: this._theme!,
+                  hostType: this._hostType,
+                  onChange: (value) => {
+                    this.properties.showDescription = value;
+                    this.render();
+                  },
+                }),
                 PropertyPaneShowAuthorDate('showAuthorDate', {
                   label: strings.ShowAuthorDateLabel,
                   value: this.properties.showAuthorDate,
@@ -294,6 +331,22 @@ export default class NewsFeedWebPart extends BaseClientSideWebPart<INewsFeedWebP
                     this.properties.dataSourceMode = dataSourceMode;
                     this.properties.selectedSites = selectedSites;
                     this.context.propertyPane.refresh();
+                    this.render();
+                  },
+                }),
+              ],
+            },
+            {
+              groupName: strings.FilterGroupName,
+              isCollapsed: true,
+              groupFields: [
+                PropertyPaneNewsFilter('newsFilter', {
+                  spfxContext: this.context,
+                  value: this.properties.newsFilter,
+                  theme: this._theme!,
+                  hostType: this._hostType,
+                  onChange: (value) => {
+                    this.properties.newsFilter = value;
                     this.render();
                   },
                 }),
