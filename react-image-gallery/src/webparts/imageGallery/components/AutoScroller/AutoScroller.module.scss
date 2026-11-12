@@ -1,0 +1,106 @@
+@import '~@microsoft/sp-office-ui-fabric-core/dist/sass/SPFabricCore.scss';
+
+$gap: 16px;
+$fade: 40px;
+
+.autoScroller {
+  position: relative;
+  width: 100%;
+  padding: 0 8px;
+  box-sizing: border-box;
+
+  .controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+  }
+
+  .viewport {
+    position: relative;
+    overflow: auto;
+    // Hand scrolling still works; the bar itself is hidden because the content is doubled.
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .item {
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+
+  .thumbnail {
+    display: block;
+    padding: 4px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: border-color .2s ease-in-out, box-shadow .2s ease-in-out;
+
+    &:hover {
+      border-color: $ms-color-themePrimary;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border: 0;
+    }
+
+    figcaption {
+      background-color: #eee;
+      padding: 5px 4px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+.horizontal {
+  .track {
+    display: flex;
+    flex-direction: row;
+    width: max-content;
+  }
+  .set {
+    display: flex;
+    flex-direction: row;
+    flex: none;
+    align-items: flex-start;
+  }
+  .item {
+    flex: none;
+    // Padding, not margin or gap, so one set's width is exactly one loop period.
+    padding-right: $gap;
+  }
+  .faded {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 $fade, #000 calc(100% - #{$fade}), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 $fade, #000 calc(100% - #{$fade}), transparent 100%);
+  }
+}
+
+.vertical {
+  .track {
+    display: block;
+  }
+  .set {
+    display: grid;
+    grid-column-gap: $gap;
+    column-gap: $gap;
+    grid-row-gap: $gap;
+    row-gap: $gap;
+    // Bottom padding stands in for the row gap between the two copies.
+    padding-bottom: $gap;
+  }
+  .faded {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 $fade, #000 calc(100% - #{$fade}), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 $fade, #000 calc(100% - #{$fade}), transparent 100%);
+  }
+}
